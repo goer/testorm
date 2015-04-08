@@ -1,13 +1,14 @@
 div(class="page-header")
    h3 Room Detail
-   button(class="btn btn-default" type="button" ng-click="addUser()") addUser
+   button(class="btn btn-default" type="button" ng-click="addUser()") Add User
+
 
 div(class="panel panel-default")
    div(class="panel-heading")='Room: {{room.id}} | {{room.name}}'
    div(class="panel-body")
       ul(class="list-group" ng-repeat="message in messages")
-         li(class="list-group-item") {{message.content}}
-            button(ng-click="message.$destroy()")
+         li(class="list-group-item") {{message.roomid}} | {{message.content}}
+            button(ng-click="deleteMessage(message.id)")
 
    .panel-footer
       .input-group

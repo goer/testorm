@@ -8,14 +8,14 @@
                   span(class="glyphicon glyphicon-plus" aria-hidden="true")
 
 div(class="panel panel-default")
-   div(class="panel-heading")='Rooms: {{rooms.length}}'
+   div(class="panel-heading")='Rooms: {{roomusers.length}}'
    div(class="panel-body")
       .table-responsive
          table(class="table")
             tr(ng-repeat="roomuser in roomusers")
                td
-                  a(href="#/roomDetail/{{roomuser.roomid}}")='{{roomuser.room.name}}'
+                  a(href="#/roomDetail/{{roomuser.roomid}}")='{{roomuser.id}} {{roomuser.room.name}} ( {{roomuser.room.id}} )'
                td(align="right")
-                  button(ng-click="roomuser.room.$destroy()" class="btn btn-default" aria-label="Right Align" align="right")
+                  button(ng-click="deleteRoom(roomuser.id)" class="btn btn-default" aria-label="Right Align" align="right")
                      span(class="glyphicon glyphicon-remove-circle" aria-hidden="true")
 

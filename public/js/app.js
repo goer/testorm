@@ -4,7 +4,7 @@
  * Created by goer on 4/7/15.
  */
 
-angular.module('myapp',['restmod','ui.bootstrap','ngRoute','js-data'])
+angular.module('myapp',['ui.bootstrap','ngRoute','js-data'])
 
 
 
@@ -15,7 +15,7 @@ angular.module('myapp',['restmod','ui.bootstrap','ngRoute','js-data'])
                     templateUrl: 'tpl/rooms.html',
                     controller: 'MainCtrl'
                 }).
-                when('/roomDetail/:roomID', {
+                when('/roomDetail/:roomId', {
                     templateUrl: 'tpl/roomDetail.html',
                     controller: 'RoomDetailCtrl'
                 }).
@@ -24,96 +24,102 @@ angular.module('myapp',['restmod','ui.bootstrap','ngRoute','js-data'])
                 });
         }])
 
+    .config(function (DSProvider) {
+        DSProvider.defaults.basePath = 'http://localhost:2403/'; // etc.
+    })
 
+    .factory('Room', function (DS) {
+        return DS.defineResource('room');
+    })
+    .factory('User', function (DS) {
+        return DS.defineResource('user');
+    })
+    .factory('Message', function (DS) {
+        return DS.defineResource('message');
+    })
+    .factory('RoomUser', function (DS) {
+        return DS.defineResource({
 
+                name: 'roomuser',
+                relations: {
+                    belongsTo: {
+                        room : {
+                            localKey: 'roomid',
+                            localField: 'room',
+                        }
+                    }
+                }
 
-    .config(['restmodProvider',function(restmodProvider){
-        return restmodProvider.rebase({
-            $config: {
-                style: 'JimmyBakerStyle!'
             }
-        })
-    }])
 
-
-    .factory('Room', function(restmod) {
-        return restmod.model('http://127.0.0.1:2403/room');
+        );
     })
 
-    .factory('Message', function(restmod) {
-        return restmod.model('http://127.0.0.1:2403/message').mix({
-            user: { belongsTo: 'User', key: 'userid' }, // default key would be 'owner_id'
-            room: { belongsTo: 'Room', key: 'roomid' } // default key would be 'owner_id'
-        });
-    })
+    .controller('MainCtrl',function($scope, RoomUser,Room,User){
 
-    .factory('User', function(restmod) {
-        return restmod.model('http://127.0.0.1:2403/users');
-    })
 
-    .factory('RoomUser', function(restmod) {
-        return restmod.model('http://127.0.0.1:2403/roomuser').mix({
-            user: { belongsTo: 'User', key: 'userid' },
-            room: { belongsTo: 'Room', key: 'roomid' }
-        });
-    })
-
-    .factory('Owner', function() {
-        return {
-            id : 1,
-            username : 'goer',
-            password : 'goer1thea'
+        function listRoomUsers() {
+            RoomUser.findAll({userid:1},{bypassCache : true}).then(function (roomusers) {
+                    $scope.roomusers = roomusers;
+                });
         }
-    })
 
-    .controller('MainCtrl',function($scope,Room,Owner,RoomUser){
-
-
-        $scope.roomusers = RoomUser.$collection({ userid: Owner.id });
-        $scope.roomusers.$refresh();
+        listRoomUsers();
 
         $scope.addRoom = function () {
 
-            var room = Room.$create({ name: $scope.roomName, userid : Owner.id });
+            Room.create({ name: $scope.roomName , userid : 1 }).then(function(room){
+                RoomUser.create( { roomid: room.id, userid: 1, statusid: 0 }).then(function(roomuser){
+                    listRoomUsers();
+                })
+            })
 
-            var roomuser = RoomUser.$create(
-                    {   'roomid' : ""+room.id ,
-                        "userid" : ""+Owner.id ,
-                        'statusid' : '0'
-                    });
-
-            $scope.roomusers.$refresh();
 
         };
+
+        $scope.deleteRoom = function (roomuserId){
+
+            RoomUser.destroy(roomuserId);
+            listRoomUsers();
+
+            console.log("deleteRoom done "+roomuserId);
+
+        }
 
 
     })
 
-    .controller('RoomDetailCtrl',function($scope,$routeParams,Room,Message,Owner,RoomUser){
+    .controller('RoomDetailCtrl',function($scope,$routeParams, Room, Message){
 
-        $scope.room = Room.$find($routeParams.roomID);
-        $scope.room.$fetch();
-        console.log("RoomDetail: "+$scope.room.id);
+        console.log("param: "+$routeParams.roomId);
+        Room.find($routeParams.roomId)
+            .then(function(room){
+                $scope.room = room;
+                console.log("Room id:"+$scope.room.id);
+                listMessages();
+            })
 
-        $scope.messages = Message.$collection({ roomid :$routeParams.roomID });
-        $scope.messages.$refresh();
 
-        $scope.users = Message.$collection({ roomid :$routeParams.roomID });
-        $scope.messages.$refresh();
+        function listMessages(){
+            Message.findAll({ roomid : $scope.room.id },{bypassCache : true}).then(function (messages) {
+                    $scope.messages = messages;
+                });
+        }
+
 
 
         $scope.addMessage = function(){
-            Message.$build(
-                {   roomid : $routeParams.roomID ,
-                    content : $scope.newMessage,
-                    userid : Owner.id,
-                }
-            ).$save().$then(function(){
 
-                    $scope.messages = Message.$collection({ roomid : $routeParams.roomID });
-                    $scope.messages.$refresh();
+            Message.create({ roomid : $scope.room.id , content : $scope.newMessage , userid: 1  })
+                .then(function(message){
+                    listMessages();
+                })
+        }
 
-                });
+        $scope.deleteMessage = function(messageId){
+
+            Message.destroy(messageId);
+            listMessages();
 
         }
 

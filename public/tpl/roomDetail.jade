@@ -1,0 +1,16 @@
+div(class="page-header")
+   h3 Room Detail
+   button(class="btn btn-default" type="button" ng-click="addUser()") addUser
+
+div(class="panel panel-default")
+   div(class="panel-heading")='Room: {{room.id}} | {{room.name}}'
+   div(class="panel-body")
+      ul(class="list-group" ng-repeat="message in messages")
+         li(class="list-group-item") {{message.content}}
+            button(ng-click="message.$destroy()")
+
+   .panel-footer
+      .input-group
+         input(type="text" class="form-control" ng-model="newMessage" placeholder="type message ...")
+         span(class="input-group-btn")
+            button(class="btn btn-default" type="button" ng-click="addMessage()") Send

@@ -1,0 +1,21 @@
+.page-header
+   panel(class="panel panel-default")
+      div(class="panel-body")
+         form(class="form-inline" align="right")
+            div(class="form-group" )
+               input(ng-model="roomName" class="form-control" placeholder="Name" align="left")
+               button(ng-click="addRoom()" class="btn btn-primary" aria-label="Right Align" align="right")
+                  span(class="glyphicon glyphicon-plus" aria-hidden="true")
+
+div(class="panel panel-default")
+   div(class="panel-heading")='Rooms: {{rooms.length}}'
+   div(class="panel-body")
+      .table-responsive
+         table(class="table")
+            tr(ng-repeat="roomuser in roomusers")
+               td
+                  a(href="#/roomDetail/{{roomuser.roomid}}")='{{roomuser.room.name}}'
+               td(align="right")
+                  button(ng-click="roomuser.room.$destroy()" class="btn btn-default" aria-label="Right Align" align="right")
+                     span(class="glyphicon glyphicon-remove-circle" aria-hidden="true")
+

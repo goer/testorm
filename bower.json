@@ -1,0 +1,28 @@
+{
+  "name": "testorm",
+  "version": "0.0.0",
+  "authors": [
+    "goer"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "public/lib",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular-restmod": "~1.1.8",
+    "angular": "~1.3.15",
+    "bootstrap": "~3.3.4",
+    "angular-ui": "~0.4.0",
+    "angular-bootstrap": "~0.12.1",
+    "angular-material": "~0.8.3",
+    "normalize.css": "~3.0.3",
+    "angular-route": "~1.3.15",
+    "js-data-angular": "~2.2.3",
+    "js-data": "~1.6.3"
+  }
+}

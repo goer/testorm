@@ -15,3 +15,14 @@ div(class="panel panel-default")
          input(type="text" class="form-control" ng-model="newMessage" placeholder="type message ...")
          span(class="input-group-btn")
             button(class="btn btn-default" type="button" ng-click="addMessage()") Send
+
+script(type="text/ng-template" id="addUser.html")
+   .modal-header
+      h4 Invite User
+   .modal-body
+      p This is modal body
+   .modal-footer
+      button(class="btn btn-success" ng-click="done()") Invite
+      button(class="btn" ng-click="cancel()") Cancel
+
+

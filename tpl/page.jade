@@ -12,14 +12,17 @@ html(lang='en', ng-app="myapp")
 
       script(src="lib/jquery/dist/jquery.js")
       script(src="lib/angular/angular.js")
-      script(src="lib/angular-route/angular-route.js")
 
       script(src="lib/js-data/dist/js-data.js")
       script(src="lib/js-data-angular/dist/js-data-angular.js")
 
       script(src="lib/bootstrap/dist/js/bootstrap.js")
       script(src="lib/angular-bootstrap/ui-bootstrap.js")
+      script(src="lib/angular-bootstrap/ui-bootstrap-tpls.js")
       script(src="lib/angular-ui/build/angular-ui.js")
+
+      script(src="lib/angular-ui-router/release/angular-ui-router.js")
+      script(src="lib/angular-breadcrumb/dist/angular-breadcrumb.js")
 
       script(src="js/app.js")
 
@@ -53,4 +56,6 @@ html(lang='en', ng-app="myapp")
                   input.form-control(type='text', placeholder='Search...')
 
       .container-fluid
-         div(ng-view)
+         div(ncy-breadcrumb)
+         div(ui-view="A")
+         div(ui-view="B")

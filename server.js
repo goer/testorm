@@ -29,6 +29,9 @@ app.get("/", function(req, res){
     res.render("page");
 });
 
+/*
+
+
 var Backbone = require('backbone');
 var BackboneMongo = require('backbone-mongo');
 var RestController = require('backbone-rest');
@@ -50,10 +53,11 @@ new RestController(app, {model_type: Message, route: '/api/message'});
 
 
 var User = Backbone.Model.extend({
-    urlRoot: mongoURL + '/user',
+    urlRoot: mongoURL + '/chatuser',
 });
 User.prototype.sync = BackboneMongo.sync(Message);
 new RestController(app, {model_type: User, route: '/api/user'});
+*/
 
 
 server.listen(app.get('port'), app.get('ipaddr'), function(){

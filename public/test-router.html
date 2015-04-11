@@ -1,0 +1,23 @@
+<html ng-app="test-ui-route">
+	<head>
+
+		<script type="text/javascript" src="lib/jquery/dist/jquery.min.js"></script>
+
+		<link rel="stylesheet" type="text/css" href="lib/bootstrap/dist/css/bootstrap.css">
+		<link rel="stylesheet" type="text/css" href="lib/bootstrap/dist/css/bootstrap-theme.css">
+
+		<scipt rel="stylesheet" type="text/css" href="lib/bootstrap/dist/js/bootstrap.js"></scipt>
+
+		<script type="text/javascript" src="lib/angular/angular.js"></script>
+		<script type="text/javascript" src="lib/angular-ui-router/release/angular-ui-router.js"></script>
+		<script type="text/javascript" src="lib/angular-breadcrumb/dist/angular-breadcrumb.js"></script>
+
+		<script type="text/javascript" src="js/test.js"></script>
+
+	</head>
+	<body> 
+		<div ncy-breadcrumb></div>
+		<p><a ui-sref="a.a">A</a> | <a ui-sref="a.a.a">B</a></p> 
+		<div ui-view>
+	</body>
+</html>

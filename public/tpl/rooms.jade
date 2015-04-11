@@ -9,7 +9,7 @@ div(class="panel panel-default")
          table(class="table")
             tr(ng-repeat="room in rooms")
                td
-                  a(ui-sref="rooms.roomDetail({roomId : room.id})") {{room.name}}
+                  a(ui-sref="root.rooms.roomDetail({roomId : room.id})") {{room.name}}
                td(align="right")
                   button(ng-click="deleteRoom(room.id)" class="btn btn-default" aria-label="Right Align" align="right")
                      span(class="glyphicon glyphicon-remove-circle" aria-hidden="true")

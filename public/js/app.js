@@ -12,25 +12,27 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
 
     .config(function ($stateProvider, $urlRouterProvider) {
 
-        $urlRouterProvider.otherwise('/rooms/roomDetail/4539e3c8ba2d289c');
+        $urlRouterProvider.otherwise('/rooms');
 
         $stateProvider
             .state('rooms', {
                 url: "/rooms",
-                views:{
-                    'A' : {templateUrl: "tpl/rooms.html",}
+                views : {
+                    'main' : {
+                        templateUrl: "tpl/rooms.html",
+                    }
                 },
                 controller: 'MainCtrl'
             })
             .state('rooms.roomDetail', {
                 url: "/roomDetail/:roomId",
-                views: {
-                    'B': { template: '<h1>roomDetail</h1>',}
+                views : {
+                    'main@rooms' : {
+                        templateUrl: 'tpl/roomDetail.html',
+                    }
                 },
                 controller: 'RoomDetailCtrl'
             })
-
-        ;
 
 
     })

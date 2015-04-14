@@ -6,102 +6,47 @@
 
 angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-breadcrumb'])
 
-    .run(['PrintToConsole', function (PrintToConsole) {
-        PrintToConsole.active = true;
-    }])
 
     .config(function ($stateProvider, $urlRouterProvider) {
 
-        $urlRouterProvider.otherwise('/rooms');
+        //$urlRouterProvider.otherwise('/rooms');
 
         $stateProvider
+        
             .state('rooms', {
                 url: "/rooms",
                 views : {
                     'main' : {
                         templateUrl: "tpl/rooms.html",
+                        controller: 'MainCtrl',
                     }
                 },
-                controller: 'MainCtrl'
+
             })
-            .state('rooms.roomDetail', {
+            .state('roomDetail', {
                 url: "/roomDetail/:roomId",
                 views : {
-                    'main@rooms' : {
+                    'main' : {
                         templateUrl: 'tpl/roomDetail.html',
+                        controller: 'RoomDetailCtrl',
                     }
                 },
-                controller: 'RoomDetailCtrl'
+
+            })
+            .state('friends', {
+                url: "/friends/:userId",
+                views : {
+                    'main' : {
+                        templateUrl: 'tpl/friends.html',
+                        controller: 'FriendsCtrl',
+                    }
+                },
+
             })
 
 
     })
 
-    .factory("PrintToConsole", ["$rootScope", function ($rootScope) {
-        var handler = {active: true};
-        handler.toggle = function () {
-            handler.active = !handler.active;
-        };
-        $rootScope.$on('$stateChangeStart', function (event, toState, toParams, fromState, fromParams) {
-            if (handler.active) {
-                console.log("$stateChangeStart --- event, toState, toParams, fromState, fromParams");
-                console.log(arguments);
-            }
-            ;
-        });
-        $rootScope.$on('$stateChangeError', function (event, toState, toParams, fromState, fromParams, error) {
-            if (handler.active) {
-                console.log("$stateChangeError --- event, toState, toParams, fromState, fromParams, error");
-                console.log(arguments);
-            }
-            ;
-        });
-        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
-            if (handler.active) {
-                console.log("$stateChangeSuccess --- event, toState, toParams, fromState, fromParams");
-                console.log(arguments);
-            }
-            ;
-        });
-        $rootScope.$on('$viewContentLoading', function (event, viewConfig) {
-            if (handler.active) {
-                console.log("$viewContentLoading --- event, viewConfig");
-                console.log(arguments);
-            }
-            ;
-        });
-        $rootScope.$on('$viewContentLoaded', function (event) {
-            if (handler.active) {
-                console.log("$viewContentLoaded --- event");
-                console.log(arguments);
-            }
-            ;
-        });
-        $rootScope.$on('$stateNotFound', function (event, unfoundState, fromState, fromParams) {
-            if (handler.active) {
-                console.log("$stateNotFound --- event, unfoundState, fromState, fromParams");
-                console.log(arguments);
-            }
-            ;
-        });
-        return handler;
-    }])
-
-    //.config(['$routeProvider',
-    //    function($routeProvider) {
-    //        $routeProvider.
-    //            when('/rooms', {
-    //                templateUrl: 'tpl/rooms.html',
-    //                controller: 'MainCtrl'
-    //            }).
-    //            when('/roomDetail/:roomId', {
-    //                templateUrl: 'tpl/roomDetail.html',
-    //                controller: 'RoomDetailCtrl'
-    //            }).
-    //            otherwise({
-    //                redirectTo: '/rooms'
-    //            });
-    //    }])
 
     .config(function (DSProvider) {
         DSProvider.defaults.basePath = 'http://localhost:2403/'; // etc.
@@ -111,7 +56,10 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
         return DS.defineResource('room');
     })
     .factory('User', function (DS) {
-        return DS.defineResource('user');
+        return DS.defineResource('users');
+    })
+    .factory('UserRelation', function (DS) {
+        return DS.defineResource('userrelation');
     })
     .factory('Message', function (DS) {
         return DS.defineResource('message');
@@ -154,9 +102,9 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
 
         }
     })
-    .controller('MainCtrl', function ($scope, $modal, RoomUser, Room, User, Message, RoomUserList, PrintToConsole) {
+    .controller('MainCtrl', function ($scope, $modal, RoomUser, Room, User, Message, RoomUserList) {
 
-        $scope.debugger = PrintToConsole;
+       
 
         function listRoomUsers() {
             RoomUser.findAll({userid: 1}, {bypassCache: true}).then(function (roomusers) {
@@ -231,12 +179,11 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
 
     })
 
-    .controller('RoomDetailCtrl', function ($scope, $modal, $routeParams, Room, Message, PrintToConsole) {
+    .controller('RoomDetailCtrl', function ($scope, $modal, $stateParams, Room, Message) {
 
-        $scope.debugger = PrintToConsole;
 
-        console.log("param: " + $routeParams.roomId);
-        Room.find($routeParams.roomId)
+        console.log("param: " + $stateParams.roomId);
+        Room.find($stateParams.roomId)
             .then(function (room) {
                 $scope.room = room;
                 console.log("Room id:" + $scope.room.id);
@@ -286,6 +233,142 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
             });
         }
 
+
+    })
+
+    .controller('FriendsCtrl',function($scope, $modal, $stateParams, UserRelation, User){
+
+
+
+        $scope.owner = {};
+
+        function getUser(){
+
+            User.find($stateParams.userId).then(function(owner){
+
+                $scope.owner = owner;
+                getListOfFriends(owner);
+
+            })
+
+        }
+
+        getUser();
+
+        $scope.userrelations = [];
+
+        function getListOfFriends(user){
+
+            UserRelation.findAll({ ownerid : user.id}).then(function(userrelations){
+
+                $scope.userrelations = userrelations;
+
+            })
+
+        }
+
+        function saveNewFriend(){
+
+            //create friend 1st
+            User.create({
+
+                username : $scope.username,
+
+            }).then(function (user) {
+                //create userrelation
+                UserRelation.create(
+                    {
+                        ownerid : $scope.ownerid,
+                        userid : user.id
+                    }
+                ).then(function (userrelation) {
+
+                        getListOfFriends(owner);
+
+                    })
+            })
+
+
+        }
+
+        function createUserRelation(ownerid,userid){
+
+            UserRelation.create({
+                ownerid : ownerid,
+                userid : userid
+            }).then(function (userrelation) {
+                alert("Create Relation OK")
+
+            })
+
+        }
+
+        var AddFriendCtrl = function ($scope, $modalInstance) {
+
+            $scope.done = function () {
+
+                //find User
+                User.findAll({ username : $scope.username}).then(function (user) {
+                    alert("User found !, just create user relation");
+                    createUserRelation($scope.owner.id,user.id);
+
+                }).catch(function (error) {
+                    //create new User
+                    User.create({
+                        username : $scope.username,
+                        password : $scope.username + "pwd"
+                    }).catch(function (user) {
+                        createUserRelation($scope.owner.id,user.id);
+                    })
+                })
+
+
+                $modalInstance.dismiss();
+
+            }
+
+            $scope.cancel = function () {
+                $modalInstance.dismiss();
+
+            }
+
+        }
+
+        $scope.addNewFriend = function (){
+
+            var modalInstance = $modal.open({
+                templateUrl: 'AddNewFriend.html',
+                resolve: {
+                    roomName: function () {
+                        return $scope.roomName;
+                    }
+                },
+                controller: AddFriendCtrl
+            });
+
+
+        }
+
+        function addNewFriendExec(){
+
+            owner = User.get($scope.ownerid);
+
+            //find no fuplicate user
+            User.findAll({ username : $scope.username }).then(function (users) {
+
+                $scope.error = 'Name is not available';
+
+            }).catch(function (error) {
+
+                //free username
+                saveNewFriend();
+
+
+
+            })
+
+
+        }
 
     })
 ;

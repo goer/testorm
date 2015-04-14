@@ -1,0 +1,23 @@
+div(class="page-header")
+   h3 Friends
+   button(class="btn btn-default" type="button" ng-click="addNewFriend()") Add new Friend
+
+div(class="panel panel-default")
+   div(class="panel-heading")='Owner: {{owner.id}} | {{owner.username}}'
+   div(class="panel-body")
+      ul(class="list-group" ng-repeat="friend in userrelations")
+         li(class="list-group-item") {{friend.id}} | {{friend.user.name}}
+            button(ng-click="deleteMessage(friend.id)")
+
+
+script(type="text/ng-template" id="AddNewFriend.html")
+   .modal-header
+      h4 Invite a Friend
+   .modal-body
+      .input-group
+         input(type="text" class="form-control" ng-model="username" placeholder="User Name")
+
+   .modal-footer
+      button(class="btn btn-success" ng-click="done()") Invite
+      button(class="btn" ng-click="cancel()") Cancel
+

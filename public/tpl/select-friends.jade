@@ -1,0 +1,18 @@
+div(class="page-header")
+   h3 Select Friends
+
+div(class="panel panel-default")
+   div(class="panel-heading")='Owner: {{owner.id}} | {{owner.username}}'
+   div(class="panel-body")
+      div(ng-repeat="f in friends")
+         .action-checkbox
+            input(type="checkbox" ng-model="f.checked")
+            label {{f.friend.user.username}}
+
+   .panel-footer
+      button(class="btn btn-success" ng-click="done()") Invite
+      button(class="btn" ng-click="cancel()") Cancel
+
+
+
+

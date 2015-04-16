@@ -1,11 +1,11 @@
 div(class="page-header")
    h3 Room Detail
-   button(class="btn btn-default" type="button" ng-click="addUser()") Add User
+   //button(class="btn btn-default" type="button" ng-click="addUser()") Add User
 
 
-div(class="panel panel-default")
-   div(class="panel-heading")='Room: {{room.id}} | {{room.name}}'
-   div(class="panel-body")
+.panel.panel-default
+   .panel-heading Room: {{room.id}} | {{room.name}}
+   .panel-body
       ul(class="list-group" ng-repeat="message in messages")
          li(class="list-group-item") {{message.roomid}} | {{message.content}}
             button(ng-click="deleteMessage(message.id)")
@@ -16,13 +16,14 @@ div(class="panel panel-default")
          span(class="input-group-btn")
             button(class="btn btn-default" type="button" ng-click="addMessage()") Send
 
-script(type="text/ng-template" id="addUser.html")
-   .modal-header
-      h4 Invite User
-   .modal-body
-      p This is modal body
-   .modal-footer
-      button(class="btn btn-success" ng-click="done()") Invite
-      button(class="btn" ng-click="cancel()") Cancel
+.panel.panel-default
+   .panel-heading Members |
+      a(ui-sref="selectFriends({roomId : room.id, ownerId: room.userid})") Add Friends
+   .panel-body
+      ul(class="list-group" ng-repeat="member in members")
+         li(class="list-group-item") {{member.id}} | {{member.user.username}}
+            button(ng-click="deleteMember(member.id)")
+
+
 
 

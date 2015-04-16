@@ -6,8 +6,8 @@ div(class="panel panel-default")
    div(class="panel-heading")='Owner: {{owner.id}} | {{owner.username}}'
    div(class="panel-body")
       ul(class="list-group" ng-repeat="friend in userrelations")
-         li(class="list-group-item") {{friend.id}} | {{friend.user.name}}
-            button(ng-click="deleteMessage(friend.id)")
+         li(class="list-group-item") {{friend.id}} | {{friend.user.username}}
+            button(ng-click="deleteFriend(friend.id)")
 
 
 script(type="text/ng-template" id="AddNewFriend.html")

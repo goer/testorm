@@ -14,7 +14,7 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
         $stateProvider
         
             .state('rooms', {
-                url: "/rooms",
+                url: "/rooms/:ownerId",
                 views : {
                     'main' : {
                         templateUrl: "tpl/rooms.html",
@@ -29,6 +29,16 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
                     'main' : {
                         templateUrl: 'tpl/roomDetail.html',
                         controller: 'RoomDetailCtrl',
+                    }
+                },
+
+            })
+            .state('selectFriends', {
+                url: "/selectFriends/:ownerId/:roomId",
+                views : {
+                    'main' : {
+                        templateUrl: 'tpl/select-friends.html',
+                        controller: 'SelectFriendCtrl',
                     }
                 },
 
@@ -56,7 +66,7 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
         return DS.defineResource('room');
     })
     .factory('User', function (DS) {
-        return DS.defineResource('users');
+        return DS.defineResource('myuser');
     })
     .factory('UserRelation', function (DS) {
         return DS.defineResource('userrelation');
@@ -81,61 +91,292 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
         );
     })
 
-    .factory('RoomUserList', function (RoomUser, Room) {
-        return {
 
-            list: function ($scope) {
-                RoomUser.findAll({userid: 1}, {bypassCache: true}).then(function (roomusers) {
+    .factory('FriendSvc', function (UserRelation,User) {
 
-                    $scope.roomusers = roomusers;
+        var ownerId ;
 
-                    $scope.rooms = [];
-                    for (var i = 0; i < $scope.roomusers.length; i++) {
-                        Room.find($scope.roomusers[i].roomid).then(function (room) {
-                            $scope.rooms.push(room);
-                        })
-                    }
+        var setOwnerId = function (oid) {
+            ownerId = oid;
+        }
 
 
-                });
-            }
+        var selectedFriends = [];
+
+        var setSelectedFriends = function (sf) {
+            selectedFriends = sf;
+        }
+
+
+
+        var getFriends = function (f) {
+
+            UserRelation.findAll({ownerid: ownerId},{bypassCache: true}).then(f);
 
         }
-    })
-    .controller('MainCtrl', function ($scope, $modal, RoomUser, Room, User, Message, RoomUserList) {
 
-       
+        var isUserExist = function (uid, fo, fe) {
+
+            User.find(uid).then(fo).catch(fe);
+
+        }
+
+        var isFriend = function(uid,fo,fe){
+
+            UserRelation.findAll({ownerid: ownerId, userid: uid}).then(function (usrs) {
+                if(usrs.length>0)
+                    fo(usrs)
+                else
+                    fe(usrs);
+
+            }).catch(fe);
+
+        }
+
+        var addFriend = function (userid,f){
+
+            UserRelation.create({
+                ownerid : ownerId,
+                userid : userid
+            }).then(f);
+
+        }
+
+        return {
+            setOwnerId : setOwnerId,
+            getFriends : getFriends,
+            addFriend : addFriend,
+            isFriend : isFriend,
+            isUserExist : isUserExist,
+            setSelectedFriends : setSelectedFriends,
+            selectedFriends : selectedFriends,
+        }
+    })
+
+
+    .factory('RoomDetailSvc', function ($q,Room,Message,RoomUser) {
+
+        var roomId;
+        var room;
+
+        var setRoomId = function (rid,f) {
+            roomId = rid;
+            Room.find(roomId).then(function (r) {
+                room = r;
+                f(r);
+            })
+        }
+
+        var getRoom = function () {
+            return room;
+        }
+
+        var addMessage = function (uid,content,type,f) {
+            Message.create(
+                {
+                    roomid: roomId,
+                    content: content,
+                    userid: uid
+                }
+            ).then(f);
+
+        }
+
+        var getMessages = function (f) {
+            Message.findAll({roomid : roomId},{bypassCache: true}).then(f);
+        }
+
+        var deleteMessage = function (mid,f) {
+            Message.destroy(mid).then(f);
+        }
+
+
+        var selectedFriends = [];
+
+        var setSelectedFriends = function (sf,f) {
+            selectedFriends = sf;
+            var defer = $q.defer();
+
+            angular.forEach(selectedFriends, function (f) {
+                addMember(f.userid).then(function () {
+                    defer.resolve();
+                });
+            });
+
+            return defer.promise;
+        }
+
+        var getMembers = function (f) {
+            RoomUser.findAll({roomid : roomId},{bypassCache: true}).then(f);
+        }
+
+        var isMember = function (uid,fo,fe) {
+            RoomUser.findAll({roomid : roomId, userid: uid},{bypassCache: true}).then(function (rus) {
+                console.log("rus:"+rus.length);
+                if(rus.length>0){
+                    fo(rus);
+                }else{
+                    fe(rus);
+                }
+            }).catch(function (err) {
+                fe(err);
+            });
+        }
+
+        var addMember = function (uid) {
+            return RoomUser.create({roomid : roomId, userid: uid});
+        }
+
+        var deleteMember = function (ruid,f) {
+            RoomUser.destroy(ruid).then(f);
+        }
+
+        return {
+
+            setRoomId : setRoomId,
+            getRoom : getRoom,
+            addMessage : addMessage,
+            getMessages : getMessages,
+            deleteMessage : deleteMessage,
+            getMembers : getMembers,
+            addMember : addMember,
+            isMember : isMember,
+            deleteMember : deleteMember,
+            setSelectedFriends : setSelectedFriends,
+
+        }
+
+    })
+
+    .factory('RoomSvc', function (RoomUser,Room,Message,FriendSvc,OwnerSvc) {
+
+        var ownerId;
+
+
+        var initOwner = function (){
+
+            OwnerSvc.getOwner(function (o) {
+                ownerId=o;
+            })
+
+        }
+
+        var setOwnerId = function (oid) {
+            if(oid) {
+                ownerId = oid;
+                FriendSvc.setOwnerId(oid);
+                return;
+            }
+            initOwner();
+            return;
+        }
+
+        var getRooms = function (f) {
+            Room.findAll({userid: ownerId}, {bypassCache: true}).then(f);
+        }
+
+        var addRoom = function (roomName,f) {
+
+            Room.create({
+                name : roomName,
+                userid : ownerId
+            }).then(function (r) {
+                getRooms(f);
+            });
+
+        }
+
+        var deleteRoom = function (roomId,f) {
+            Room.destroy(roomId).then(function (r) {
+                RoomUser.destroyAll({roomid: r.id});
+                Message.destroyAll({roomid: r.id});
+            });
+        }
+
+
+
+
+        return {
+
+            setOwnerId : setOwnerId,
+            getRooms : getRooms,
+            addRoom : addRoom,
+            deleteRoom : deleteRoom,
+
+        }
+
+
+    })
+
+    .factory('OwnerSvc', function(User){
+
+        var owner = null;
+
+        var login = function (userName, password) {
+
+            return User.findAll({username : 'goer'}).then(function(usr){
+                owner = usr;
+            })
+
+        }
+
+        var getOwner = function(f){
+
+            if(owner!=null) {
+                f(owner);
+                return;
+            }
+
+            login('','').then(function (o) {
+                f(o);
+            })
+
+        }
+
+        var isLogin = function () {
+            if(owner!=null) return true;
+            return false;
+        }
+
+        var logout = function () {
+
+
+        }
+
+        return {
+
+            owner : owner,
+            login : login,
+            logout : logout,
+            isLogin : isLogin,
+            getOwner : getOwner,
+        }
+
+    })
+
+    .controller('MainCtrl', function ($scope, $modal, $stateParams,RoomUser, Room, User, Message, RoomSvc ) {
+
+        RoomSvc.setOwnerId($stateParams.ownerId);
+
 
         function listRoomUsers() {
-            RoomUser.findAll({userid: 1}, {bypassCache: true}).then(function (roomusers) {
-
-                $scope.roomusers = roomusers;
-
-                $scope.rooms = [];
-                for (var i = 0; i < $scope.roomusers.length; i++) {
-                    Room.find($scope.roomusers[i].roomid).then(function (room) {
-                        $scope.rooms.push(room);
-                    })
-                }
-
-
-            });
+            RoomSvc.getRooms(function (rooms) {
+                $scope.rooms = rooms;
+            })
         }
 
         listRoomUsers();
 
 
-        var AddRoomCtrl = function ($scope, $modalInstance) {
+        var AddRoomCtrl = function ($scope, $modalInstance, ownerId) {
 
 
             $scope.done = function () {
-                Room.create({name: $scope.roomName, userid: 1}).then(function (room) {
-                    RoomUser.create({roomid: room.id, userid: 1, statusid: 0}).then(function (roomuser) {
-                        listRoomUsers();
-                        $modalInstance.dismiss();
-                    })
-                })
 
+                RoomSvc.addRoom($scope.roomName, function (room) {
+                    listRoomUsers();
+                    $modalInstance.dismiss();
+                })
 
             }
 
@@ -154,6 +395,9 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
                 resolve: {
                     roomName: function () {
                         return $scope.roomName;
+                    },
+                    ownerId: function () {
+                        return $stateParams.ownerId;
                     }
                 },
                 controller: AddRoomCtrl
@@ -162,75 +406,101 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
 
         $scope.deleteRoom = function (roomId) {
 
-            Room.destroy(roomId);
-            RoomUser.findAll({roomid: roomId}).then(function (roomuser) {
-                RoomUser.destroy(roomuser.id);
-                Message.findAll({roomid: roomId}).then(function (message) {
-                    Message.destroy(message.id);
-                })
-                listRoomUsers();
+            RoomSvc.deleteRoom(roomId, function () {
+                console.log("deleteRoom done " + roomId);
             })
-
-
-            console.log("deleteRoom done " + roomId);
 
         }
 
 
     })
 
-    .controller('RoomDetailCtrl', function ($scope, $modal, $stateParams, Room, Message) {
-
+    .controller('RoomDetailCtrl', function ($scope, $modal, $stateParams, Room, Message, RoomDetailSvc, FriendSvc) {
 
         console.log("param: " + $stateParams.roomId);
-        Room.find($stateParams.roomId)
-            .then(function (room) {
-                $scope.room = room;
-                console.log("Room id:" + $scope.room.id);
-                listMessages();
-            })
+        RoomDetailSvc.setRoomId($stateParams.roomId, function (room) {
+            $scope.room = room;
+            console.log("Room id:" + $scope.room.id);
+            listMessages();
+        });
 
+        function listMembers() {
+            RoomDetailSvc.getMembers(function (ms) {
+                $scope.members = ms;
+            })
+        }
+
+        listMembers();
 
         function listMessages() {
-            Message.findAll({roomid: $scope.room.id}, {bypassCache: true}).then(function (messages) {
+            RoomDetailSvc.getMessages(function (messages) {
                 $scope.messages = messages;
-            });
+            })
         }
 
 
         $scope.addMessage = function () {
 
-            Message.create({roomid: $scope.room.id, content: $scope.newMessage, userid: 1})
-                .then(function (message) {
-                    listMessages();
-                })
+            RoomDetailSvc.addMessage(1, $scope.newMessage,0, function (message) {
+                listMessages();
+            })
+
         }
 
         $scope.deleteMessage = function (messageId) {
 
-            Message.destroy(messageId);
-            listMessages();
+            RoomDetailSvc.deleteMessage(messageId, function (m) {
+                listMessages();
+            })
+
 
         }
 
 
-        $scope.addUser = function () {
-            var modalInstance = $modal.open({
-                templateUrl: 'addUser.html',
-                controller: function ($scope, $modalInstance) {
+        $scope.deleteMember = function (memberId) {
+            RoomDetailSvc.deleteMember(memberId, function () {
+                console.log("Delete Member:"+memberId);
+                listMembers();
+            })
+        }
 
-                    $scope.done = function () {
-                        $modalInstance.dismiss();
 
-                    }
+    })
 
-                    $scope.cancel = function () {
-                        $modalInstance.dismiss();
+    .controller('SelectFriendCtrl', function ($scope, $state, $stateParams, FriendSvc, RoomDetailSvc) {
 
-                    }
+        FriendSvc.setOwnerId($stateParams.ownerId);
+        $scope.friends = [];
+        FriendSvc.getFriends(function (fs) {
+            angular.forEach(fs, function (f) {
+                RoomDetailSvc.isMember(f.userid, function (x) {
 
+                }, function (y) {
+                    $scope.friends.push({ friend: f, checked : false });
+                })
+            })
+        })
+
+
+        $scope.done = function () {
+
+            console.dir($scope.friends);
+            var s=[];
+            angular.forEach($scope.friends, function (f) {
+                if(f.checked){
+                    s.push(f.friend);
                 }
             });
+
+            RoomDetailSvc.setSelectedFriends(s).then(function(){
+                $state.go("roomDetail",{roomId: $stateParams.roomId});
+            });
+
+
+        }
+
+        $scope.cancel = function () {
+            $state.go("roomDetail",{roomId: $stateParams.roomId});
         }
 
 
@@ -247,7 +517,7 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
             User.find($stateParams.userId).then(function(owner){
 
                 $scope.owner = owner;
-                getListOfFriends(owner);
+                getListOfFriends(owner.id);
 
             })
 
@@ -257,9 +527,9 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
 
         $scope.userrelations = [];
 
-        function getListOfFriends(user){
+        function getListOfFriends(ownerid){
 
-            UserRelation.findAll({ ownerid : user.id}).then(function(userrelations){
+            UserRelation.findAll({ ownerid : ownerid}, {bypassCache: true}).then(function(userrelations){
 
                 $scope.userrelations = userrelations;
 
@@ -267,29 +537,6 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
 
         }
 
-        function saveNewFriend(){
-
-            //create friend 1st
-            User.create({
-
-                username : $scope.username,
-
-            }).then(function (user) {
-                //create userrelation
-                UserRelation.create(
-                    {
-                        ownerid : $scope.ownerid,
-                        userid : user.id
-                    }
-                ).then(function (userrelation) {
-
-                        getListOfFriends(owner);
-
-                    })
-            })
-
-
-        }
 
         function createUserRelation(ownerid,userid){
 
@@ -297,28 +544,29 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
                 ownerid : ownerid,
                 userid : userid
             }).then(function (userrelation) {
-                alert("Create Relation OK")
+                console.log("Create Relation OK");
+                getListOfFriends(ownerid);
 
             })
 
         }
 
-        var AddFriendCtrl = function ($scope, $modalInstance) {
+        var AddFriendCtrl = function ($scope, $modalInstance, ownerid) {
 
             $scope.done = function () {
 
                 //find User
                 User.findAll({ username : $scope.username}).then(function (user) {
-                    alert("User found !, just create user relation");
-                    createUserRelation($scope.owner.id,user.id);
+                    console.log("User found !, just create user relation");
+                    createUserRelation(ownerid,user[0].id);
 
                 }).catch(function (error) {
                     //create new User
                     User.create({
                         username : $scope.username,
                         password : $scope.username + "pwd"
-                    }).catch(function (user) {
-                        createUserRelation($scope.owner.id,user.id);
+                    }).then(function (user) {
+                        createUserRelation(ownerid,user.id);
                     })
                 })
 
@@ -339,36 +587,23 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
             var modalInstance = $modal.open({
                 templateUrl: 'AddNewFriend.html',
                 resolve: {
-                    roomName: function () {
-                        return $scope.roomName;
+                    ownerid : function () {
+                        return $scope.owner.id;
                     }
                 },
                 controller: AddFriendCtrl
             });
 
-
         }
 
-        function addNewFriendExec(){
+        $scope.deleteFriend = function (friendid) {
 
-            owner = User.get($scope.ownerid);
-
-            //find no fuplicate user
-            User.findAll({ username : $scope.username }).then(function (users) {
-
-                $scope.error = 'Name is not available';
-
-            }).catch(function (error) {
-
-                //free username
-                saveNewFriend();
-
-
-
+            UserRelation.destroy(friendid).then(function () {
+                getListOfFriends($scope.owner.id);
             })
 
-
         }
+
 
     })
 ;

@@ -7,12 +7,12 @@ div(class="panel panel-default")
    div(class="panel-body")
       .table-responsive
          table(class="table")
-            tr(ng-repeat="room in rooms")
+            tr(ng-repeat="r in rooms")
                td
-                  a(ui-sref="roomDetail({roomId : room.id})") {{room.name}}
-               td ({{room.id}})
+                  a(ui-sref="roomDetail({roomId : r.id})") {{r.name}}
+               td ({{r.id}})
                td(align="right")
-                  button(ng-click="deleteRoom(room.id)" class="btn btn-default" aria-label="Right Align" align="right")
+                  button(ng-click="deleteRoom(r.id)" class="btn btn-default" aria-label="Right Align" align="right")
                      span(class="glyphicon glyphicon-remove-circle" aria-hidden="true")
 
 script(type="text/ng-template" id="addRoom.html")

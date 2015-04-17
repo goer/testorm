@@ -1,0 +1,13 @@
+{
+  "name": "random-locations",
+  "version": "1.0.0",
+  "authors": [
+    "Marian Hello <marian.hello@gmail.com>"
+  ],
+  "description": "random-locations is small library, that generates locations nearby defined location and radius.",
+  "main": "location-generator.js",
+  "moduleType": [
+    "globals"
+  ],
+  "license": "MIT"
+}

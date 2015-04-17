@@ -23,6 +23,9 @@
     "js-data-angular": "~2.2.3",
     "js-data": "~1.6.3",
     "angular-ui-router": "~0.2.13",
-    "angular-breadcrumb": "~0.3.3"
+    "angular-breadcrumb": "~0.3.3",
+    "ng-pageslide": "~1.0.3",
+    "ngmap": "~1.7.7",
+    "random-locations": "git://github.com/mauron85/random-locations.git#~1.0.0"
   }
 }

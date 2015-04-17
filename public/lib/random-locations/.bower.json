@@ -1,0 +1,24 @@
+{
+  "name": "random-locations",
+  "version": "1.0.0",
+  "authors": [
+    "Marian Hello <marian.hello@gmail.com>"
+  ],
+  "description": "random-locations is small library, that generates locations nearby defined location and radius.",
+  "main": "location-generator.js",
+  "moduleType": [
+    "globals"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/mauron85/random-locations",
+  "_release": "1.0.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v1.0.0",
+    "commit": "c46b73923c2e781ef05f065c8f4cf6c39ffd5df3"
+  },
+  "_source": "git://github.com/mauron85/random-locations.git",
+  "_target": "~1.0.0",
+  "_originalSource": "git://github.com/mauron85/random-locations.git",
+  "_direct": true
+}

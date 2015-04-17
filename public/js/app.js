@@ -4,7 +4,16 @@
  * Created by goer on 4/7/15.
  */
 
-angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-breadcrumb'])
+angular.module('myapp',
+    [
+        'ui.bootstrap',
+        'js-data',
+        'ui.router',
+        'ncy-angular-breadcrumb',
+        "pageslide-directive",
+        'ngMap'
+    ]
+)
 
 
     .config(function ($stateProvider, $urlRouterProvider) {
@@ -53,6 +62,16 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
                 },
 
             })
+            .state('map', {
+                url: "/map/:roomId",
+                views : {
+                    'main' : {
+                        templateUrl: 'tpl/map.html',
+                        controller: 'MapCtrl',
+                    }
+                },
+
+            })
 
 
     })
@@ -91,6 +110,61 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
         );
     })
 
+    .run(function ($interval,UserSvc,MemberLocationSvc) {
+
+
+        $interval(MemberLocationSvc.refreshMemberLocations,1000);
+
+
+    })
+
+    .factory('MemberLocationSvc', function (RoomDetailSvc) {
+
+        var currentPosition =  {lat:-6.264429700000001,lon:106.8036494};
+
+        var getUserLocation = function () {
+            var generator = new LocationGenerator();
+            var xy = generator.nextLocation(currentPosition.lat,currentPosition.lon,1000);
+            return { lat: xy[1], lon: xy[0]};
+        }
+
+        var memberLocations = {};
+
+        var refreshMemberLocations = function () {
+
+            RoomDetailSvc.getMembers(function (members) {
+                angular.forEach(members, function (member) {
+                    var pos = getUserLocation();
+
+                    memberLocations[member.userid]=pos;
+                    updateMemberLocations(member.userid,pos);
+
+                })
+            })
+        }
+
+        var getMemberLocation = function (userid,f) {
+                f(userid,memberLocations[userid]);
+        }
+        
+        var updateMemberLocations = function(userid,pos){
+
+        }
+
+        var setFunctionMemberLocation = function (f){
+            updateMemberLocations = f;
+        }
+
+        return {
+            refreshMemberLocations: refreshMemberLocations,
+            memberLocations: memberLocations,
+            updateMemberLocations: updateMemberLocations,
+            getMemberLocation: getMemberLocation,
+            setFunctionMemberLocation: setFunctionMemberLocation,
+            currentPosition: currentPosition,
+        }
+
+    })
 
     .factory('FriendSvc', function (UserRelation,User) {
 
@@ -354,6 +428,87 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
 
     })
 
+    .factory('MapSvc', function () {
+
+        function setMapCenter(position, f) {
+
+            var pos = new google.maps.LatLng(
+                position.coords.latitude,
+                position.coords.longitude);
+
+
+            $scope.positions.push({
+                lat: pos.k,
+                lng: pos.B
+            });
+
+
+            console.log(pos);
+            $scope.map.setCenter(pos);
+            setMarker(pos);
+            var d = {
+                user: $scope.currentUser || 'main',
+                location: {
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude
+                }
+            };
+
+            socket.emit('user:location:update', d);
+            console.log('user:location:update' + d);
+
+
+        }
+
+
+        return {
+
+        }
+
+    })
+
+    .factory('UserLocationSvc', function () {
+
+        var userId;
+
+        var currentPosition =  {lat:-6.264429700000001,lon:106.8036494};
+
+        var getUserLocation = function () {
+            var generator = new LocationGenerator();
+            var xy = generator.nextLocation(currentPosition.lat,currentPosition.lon,10000);
+            return { lat: xy[0], lon: xy[1]};
+        }
+
+        var setUserLocation = function (loc) {
+
+        }
+
+        var getUserLocationHistory = function () {
+
+        }
+
+        return {
+            userId: userId,
+            getUserLocation: getUserLocation,
+            setUserLocation: setUserLocation,
+            getUserLocationHistory: getUserLocationHistory,
+        }
+
+    })
+
+    .factory('UserSvc', function () {
+
+
+
+        return {
+
+        }
+
+    })
+
+
+
+
     .controller('MainCtrl', function ($scope, $modal, $stateParams,RoomUser, Room, User, Message, RoomSvc ) {
 
         RoomSvc.setOwnerId($stateParams.ownerId);
@@ -604,6 +759,125 @@ angular.module('myapp', ['ui.bootstrap', 'js-data', 'ui.router','ncy-angular-bre
 
         }
 
+
+    })
+
+    .controller('MapCtrl', function ($scope, $stateParams, RoomDetailSvc, MemberLocationSvc) {
+
+        $scope.checked = false; // This will be binded using the ps-open attribute
+        $scope.toggle = function(){
+            $scope.checked = !$scope.checked
+        }
+
+        RoomDetailSvc.setRoomId($stateParams.roomId, function (room) {
+            $scope.room = room;
+            console.log("Room id:" + $scope.room.id);
+        });
+
+        function listMembers() {
+            RoomDetailSvc.getMembers(function (ms) {
+                $scope.members = ms;
+            })
+        }
+
+        listMembers();
+
+        $scope.memberLocations = {};
+        $scope.memberMarker = {}
+
+        function isMember(items,k){
+            return items.hasOwnProperty(k);
+            //angular.forEach(items, function(value, key) {
+            //    if(angular.equals(k,key))
+            //        return true;
+            //});
+            //return false;
+        }
+
+        var updateMemberLocation = function(userid,pos){
+            console.log("Userid: "+userid+" pos lat:"+pos.lat+" lon:"+pos.lon);
+            $scope.memberLocations[userid]=pos;
+            if (!isMember($scope.memberMarker,userid))
+                $scope.memberMarker[userid] = createMarker(userid);
+            $scope.memberMarker[userid].setPosition(new google.maps.LatLng(
+                $scope.memberLocations[userid].lat,
+                $scope.memberLocations[userid].lon
+            ));
+
+            refreshMap(userid);
+        }
+
+        MemberLocationSvc.setFunctionMemberLocation(updateMemberLocation);
+
+        $scope.$on('mapInitialized', function(event, map) {
+            $scope.map = map;
+        });
+
+        $scope.currentMember = 0;
+
+
+        function refreshMap(userid){
+            if(userid===$scope.currentMember) {
+                drawMap($scope.currentMember, $scope.memberLocations[$scope.currentMember]);
+            }
+            zoomToSeeAll();
+        }
+
+        function createMarker(userid){
+            var infoWindow = new google.maps.InfoWindow();
+            var marker = new google.maps.Marker({
+                map: $scope.map,
+                title: "Userid:"+userid,
+                content: '<div class="infoWindowContent">' + "UserID:"+userid + '</div>',
+            });
+            return marker;
+        }
+
+        function drawMap(userid,p){
+
+            var pos = new google.maps.LatLng(
+                p.lat,
+                p.lon
+            );
+            $scope.map.setCenter(pos);
+            //$scope.memberMarker[userid].setPosition(pos);
+
+        }
+
+
+        $scope.centerLocation = {}
+
+
+        function zoomToSeeAll(){
+
+            var bounds = new google.maps.LatLngBounds();
+            angular.forEach($scope.memberLocations,function(v,k){
+                bounds.extend(new google.maps.LatLng(v.lat, v.lon));
+            })
+
+        }
+
+        $scope.centerCurrentLocation = function () {
+            $scope.currentMember = 0;
+            navigator.geolocation.getCurrentPosition(function(position) {
+                MemberLocationSvc.currentPosition = {
+                    lat: position.coords.latitude, lon: position.coords.longitude
+                };
+                $scope.centerLocation = MemberLocationSvc.currentPosition;
+
+                drawMap("Center",MemberLocationSvc.currentPosition);
+            });
+        }
+
+        $scope.centerCurrentLocation();
+
+
+        $scope.setMapToMember = function (userid) {
+
+                $scope.currentMember = userid;
+                drawMap('Userid:'+$scope.currentMember,$scope.memberLocations[$scope.currentMember]);
+
+        }
 
     })
 ;

@@ -1,0 +1,34 @@
+.page-header
+   h3 Map
+   a(ng-click="toggle()") Open
+
+.panel.panel-default
+   .panel-heading
+      h4 Member
+   .panel-body
+      .action-checkbox
+         input(type="checkbox" ng-model="f.checked")
+         label All
+         br
+         input(type="checkbox" ng-model="f.checked")
+         label {{room.user.username}}
+
+         div(ng-repeat="m in members")
+            input(type="checkbox" ng-model="f.checked")
+            label(ng-click="setMapToMember(m.userid)")  {{m.id}} | {{m.user.username}}
+
+.panel.panel-default
+   .panel-heading
+      h4 Map {{currentMember}} : {{memberLocations[currentMember].lat}},{{memberLocations[currentMember].lon}}
+   .panel-body
+      div(classs="mapWrap" data-tap-disabled="true")
+         map(center="43.07493,-89.381388" zoom="15")
+            marker(ng-repeat="pos in memberLocations" position="{{pos.lat}},{{pos.lng}}")
+
+   .panel-footer
+      a(ng-click="centerCurrentLocation()") Center
+      span {{centerLocation.lat}},{{centerLocation.lon}}
+
+
+
+
